@@ -50,6 +50,15 @@ export class AnalyzeAllWorkflow extends WorkflowEntrypoint<Env, AnalyzeAllParams
 			
 			await (step.do as any)(
 				`analyze-feedback-${feedback.id}`,
+				// Define a retry strategy
+				{
+					retries: {
+						limit: 5,
+						delay: '5 seconds',
+						backoff: 'exponential',
+					},
+					timeout: '15 minutes',
+				},
 				async () => {
 					// Simulate AI analysis with randomized values
 					const category = validCategories[Math.floor(Math.random() * validCategories.length)];
@@ -66,15 +75,6 @@ export class AnalyzeAllWorkflow extends WorkflowEntrypoint<Env, AnalyzeAllParams
 						.run();
 
 					console.log(`Processed feedback ${feedback.id}: ${category}, ${sentiment}, ${urgency}`);
-				},
-				// Define a retry strategy
-				{
-					retries: {
-						limit: 5,
-						delay: '5 seconds',
-						backoff: 'exponential',
-					},
-					timeout: '15 minutes',
 				}
 			);
 		}

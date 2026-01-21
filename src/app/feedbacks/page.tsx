@@ -154,6 +154,55 @@ export default function FeedbacksPage() {
 									{selectedFeedback.text}
 								</p>
 							</div>
+
+							{/* Analysis Section */}
+							<div className="mt-6 pt-6 border-t border-black/[.08] dark:border-white/[.145]">
+								<span className="text-xs font-semibold uppercase tracking-wider text-foreground/40 mb-3 block">
+									Analysis
+								</span>
+								{selectedFeedback.analysis ? (
+									<div className="space-y-3">
+										<div className="flex items-center gap-2">
+											<span className="text-sm font-medium text-foreground/60">Category:</span>
+											<span className="text-sm px-3 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded-full">
+												{selectedFeedback.analysis.category}
+											</span>
+										</div>
+										<div className="flex items-center gap-2">
+											<span className="text-sm font-medium text-foreground/60">Sentiment:</span>
+											<span className={`text-sm px-3 py-1 rounded-full ${
+												selectedFeedback.analysis.sentiment === 'positive' 
+													? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300'
+													: selectedFeedback.analysis.sentiment === 'negative'
+													? 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300'
+													: 'bg-gray-100 dark:bg-gray-900/30 text-gray-700 dark:text-gray-300'
+											}`}>
+												{selectedFeedback.analysis.sentiment}
+											</span>
+										</div>
+										<div className="flex items-center gap-2">
+											<span className="text-sm font-medium text-foreground/60">Urgency:</span>
+											<span className={`text-sm px-3 py-1 rounded-full ${
+												selectedFeedback.analysis.urgency === 'high' 
+													? 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300'
+													: selectedFeedback.analysis.urgency === 'low'
+													? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300'
+													: 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-300'
+											}`}>
+												{selectedFeedback.analysis.urgency}
+											</span>
+										</div>
+										<div className="text-xs text-foreground/40 mt-2">
+											Analyzed on {new Date(selectedFeedback.analysis.labeled_at).toLocaleString()}
+										</div>
+									</div>
+								) : (
+									<div className="text-sm text-foreground/40 italic bg-gray-50 dark:bg-gray-900/20 p-4 rounded border border-dashed border-black/[.08] dark:border-white/[.145]">
+										Analysis not yet generated for this feedback
+									</div>
+								)}
+							</div>
+
 							{selectedFeedback.created_at && (
 								<div className="mt-6 pt-6 border-t border-black/[.08] dark:border-white/[.145]">
 									<span className="text-xs font-semibold uppercase tracking-wider text-foreground/40 mb-2 block">

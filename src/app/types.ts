@@ -3,6 +3,7 @@ export interface Feedback {
 	source: string;
 	text: string;
 	created_at: string;
+	analysis?: FeedbackAnalysis | null;
 }
 
 export interface FeedbackAnalysis {

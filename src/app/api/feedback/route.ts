@@ -20,20 +20,59 @@ export async function GET(request: NextRequest) {
 
 		let stmt;
 		if (source) {
-			stmt = db.prepare(
-				"SELECT id, source, text, created_at FROM feedback WHERE source = ? ORDER BY created_at DESC"
-			).bind(source);
+			stmt = db.prepare(`
+				SELECT 
+					f.id, 
+					f.source, 
+					f.text, 
+					f.created_at,
+					fa.category,
+					fa.sentiment,
+					fa.urgency,
+					fa.labeled_at
+				FROM feedback f
+				LEFT JOIN feedback_analysis fa ON f.id = fa.feedback_id
+				WHERE f.source = ? 
+				ORDER BY f.created_at DESC
+			`).bind(source);
 		} else {
-			stmt = db.prepare(
-				"SELECT id, source, text, created_at FROM feedback ORDER BY created_at DESC"
-			);
+			stmt = db.prepare(`
+				SELECT 
+					f.id, 
+					f.source, 
+					f.text, 
+					f.created_at,
+					fa.category,
+					fa.sentiment,
+					fa.urgency,
+					fa.labeled_at
+				FROM feedback f
+				LEFT JOIN feedback_analysis fa ON f.id = fa.feedback_id
+				ORDER BY f.created_at DESC
+			`);
 		}
 
 		const result = await stmt.all();
 
+		// Transform the results to include analysis as a nested object
+		// eslint-disable-next-line @typescript-eslint/no-explicit-any
+		const feedbackWithAnalysis = result.results.map((row: any) => ({
+			id: row.id,
+			source: row.source,
+			text: row.text,
+			created_at: row.created_at,
+			analysis: row.category ? {
+				feedback_id: row.id,
+				category: row.category,
+				sentiment: row.sentiment,
+				urgency: row.urgency,
+				labeled_at: row.labeled_at,
+			} : null,
+		}));
+
 		return NextResponse.json({
 			success: true,
-			feedback: result.results || [],
+			feedback: feedbackWithAnalysis || [],
 		});
 	} catch (error) {
 		console.error("Error fetching feedback:", error);
