@@ -1,0 +1,26 @@
+{
+	"$schema": "node_modules/wrangler/config-schema.json",
+	"name": "analyze-all-workflow",
+	"main": "workflows/analyze-all.ts",
+	"compatibility_date": "2025-12-01",
+	"compatibility_flags": [
+		"nodejs_compat"
+	],
+	"d1_databases": [
+		{
+			"binding": "d1_db",
+			"database_name": "d1-db",
+			"database_id": "808664d0-009c-4788-8e4e-f7cc0355b40f"
+		}
+	],
+	"ai": {
+		"binding": "AI"
+	},
+	"workflows": [
+		{
+			"binding": "ANALYZE_ALL_WORKFLOW",
+			"name": "analyze-all-workflow",
+			"class_name": "AnalyzeAllWorkflow"
+		}
+	]
+}

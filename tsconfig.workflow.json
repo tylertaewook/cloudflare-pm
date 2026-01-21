@@ -1,0 +1,23 @@
+{
+	"compilerOptions": {
+		"target": "esnext",
+		"lib": ["esnext"],
+		"module": "esnext",
+		"moduleResolution": "bundler",
+		"resolveJsonModule": true,
+		"allowJs": true,
+		"checkJs": false,
+		"jsx": "react",
+		"noEmit": true,
+		"isolatedModules": true,
+		"allowSyntheticDefaultImports": true,
+		"forceConsistentCasingInFileNames": true,
+		"skipLibCheck": true,
+		"strict": true,
+		"types": [
+			"@cloudflare/workers-types/2023-07-01"
+		]
+	},
+	"include": ["workflows/**/*", "cloudflare-env.d.ts"],
+	"exclude": ["node_modules"]
+}
