@@ -33,7 +33,7 @@ export async function GET(request: NextRequest) {
 				FROM feedback f
 				LEFT JOIN feedback_analysis fa ON f.id = fa.feedback_id
 				WHERE f.source = ? 
-				ORDER BY f.created_at DESC
+				ORDER BY f.created_at ASC
 			`).bind(source);
 		} else {
 			stmt = db.prepare(`
@@ -48,7 +48,7 @@ export async function GET(request: NextRequest) {
 					fa.labeled_at
 				FROM feedback f
 				LEFT JOIN feedback_analysis fa ON f.id = fa.feedback_id
-				ORDER BY f.created_at DESC
+				ORDER BY f.created_at ASC
 			`);
 		}
 
