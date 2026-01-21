@@ -39,7 +39,7 @@ export class AnalyzeAllWorkflow extends WorkflowEntrypoint<Env, AnalyzeAllParams
 
 		console.log(`Processing ${feedbacks.length} feedbacks`);
 
-		// Valid values for randomization
+		// Valid values for AI categorization
 		const validCategories = ['docs', 'onboarding', 'wrangler_cli', 'workers_runtime', 'd1', 'workflows', 'ai_search', 'observability', 'dashboard_ui', 'other'];
 		const validSentiments = ['positive', 'neutral', 'negative'];
 		const validUrgencies = ['high', 'medium', 'low'];
@@ -60,10 +60,67 @@ export class AnalyzeAllWorkflow extends WorkflowEntrypoint<Env, AnalyzeAllParams
 					timeout: '15 minutes',
 				},
 				async () => {
-					// Simulate AI analysis with randomized values
-					const category = validCategories[Math.floor(Math.random() * validCategories.length)];
-					const sentiment = validSentiments[Math.floor(Math.random() * validSentiments.length)];
-					const urgency = validUrgencies[Math.floor(Math.random() * validUrgencies.length)];
+					// Use Workers AI to analyze feedback with structured output
+					const response = await this.env.AI.run('@cf/meta/llama-3.1-8b-instruct', {
+						messages: [
+							{
+								role: 'system',
+								content: `You are a feedback analyzer. Analyze the given feedback and categorize it.
+Category options: ${validCategories.join(', ')}
+Sentiment options: ${validSentiments.join(', ')}
+Urgency options: ${validUrgencies.join(', ')}
+
+Respond ONLY with valid JSON matching this exact structure:
+{
+  "category": "one of the valid categories",
+  "sentiment": "one of the valid sentiments", 
+  "urgency": "one of the valid urgencies"
+}`
+							},
+							{
+								role: 'user',
+								content: `Analyze this feedback from ${feedback.source}: "${feedback.text}"`
+							}
+						],
+					response_format: {
+						type: 'json_schema',
+						json_schema: {
+							type: 'object',
+							properties: {
+								category: {
+									type: 'string',
+									enum: validCategories
+								},
+								sentiment: {
+									type: 'string',
+									enum: validSentiments
+								},
+								urgency: {
+									type: 'string',
+									enum: validUrgencies
+								}
+							},
+							required: ['category', 'sentiment', 'urgency']
+						}
+					}
+				});
+
+				console.log(`Raw AI response for feedback ${feedback.id}:`, JSON.stringify(response));
+
+				// Parse the response - Workers AI returns structured output directly
+				let analysis: FeedbackAnalysis;
+				if (typeof response === 'object' && 'response' in response) {
+					// If response has a 'response' field, use it
+					const responseData = (response as any).response;
+					if (typeof responseData === 'string') {
+						analysis = JSON.parse(responseData);
+					} else {
+						analysis = responseData;
+					}
+				} else {
+					// Response might be the analysis directly
+					analysis = response as FeedbackAnalysis;
+				}
 
 					// Insert into feedback_analysis
 					await this.env.d1_db
@@ -71,10 +128,10 @@ export class AnalyzeAllWorkflow extends WorkflowEntrypoint<Env, AnalyzeAllParams
 							INSERT INTO feedback_analysis (feedback_id, category, sentiment, urgency)
 							VALUES (?, ?, ?, ?)
 						`)
-						.bind(feedback.id, category, sentiment, urgency)
+						.bind(feedback.id, analysis.category, analysis.sentiment, analysis.urgency)
 						.run();
 
-					console.log(`Processed feedback ${feedback.id}: ${category}, ${sentiment}, ${urgency}`);
+					console.log(`Processed feedback ${feedback.id}: ${analysis.category}, ${analysis.sentiment}, ${analysis.urgency}`);
 				}
 			);
 		}

@@ -13,3 +13,16 @@ export interface FeedbackAnalysis {
 	urgency: string;
 	labeled_at: string;
 }
+
+export interface StatCount {
+	name: string;
+	count: number;
+}
+
+export interface FeedbackStats {
+	success: boolean;
+	sources: StatCount[];
+	categories: StatCount[];
+	sentiments: StatCount[];
+	urgencies: StatCount[];
+}
