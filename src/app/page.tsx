@@ -1,52 +1,184 @@
-import Image from "next/image";
+"use client";
+
+import { useState, useEffect } from "react";
+
+interface Feedback {
+	id: number;
+	source: string;
+	text: string;
+	created_at: string;
+}
 
 export default function Home() {
-	return (
-		<div className="font-sans grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20">
-			<main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-				<Image className="dark:invert" src="/next.svg" alt="Next.js logo" width={180} height={38} priority />
-				<ol className="font-mono list-inside list-decimal text-sm/6 text-center sm:text-left">
-					<li className="mb-2 tracking-[-.01em] text-red-500">
-						Get started by editing{" "}
-						<code className="bg-black/[.05] dark:bg-white/[.06] font-mono font-semibold px-1 py-0.5 rounded">
-							src/app/page.tsx
-						</code>
-						.
-					</li>
-					<li className="tracking-[-.01em]">Save and see your changes instantly.</li>
-				</ol>
+	const [feedbacks, setFeedbacks] = useState<Feedback[]>([]);
+	const [selectedId, setSelectedId] = useState<number | null>(null);
+	const [filterSource, setFilterSource] = useState<string>("All");
+	const [loading, setLoading] = useState(true);
 
-				<div className="flex gap-4 items-center flex-col sm:flex-row">
-					<a
-						className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-						href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-						target="_blank"
-						rel="noopener noreferrer"
+	useEffect(() => {
+		async function fetchFeedbacks() {
+			try {
+				const response = await fetch("/api/feedback");
+				const data = (await response.json()) as { success: boolean; feedback: Feedback[] };
+				if (data.success) {
+					setFeedbacks(data.feedback);
+					if (data.feedback.length > 0) {
+						setSelectedId(data.feedback[0].id);
+					}
+				}
+			} catch (error) {
+				console.error("Error fetching feedback:", error);
+			} finally {
+				setLoading(false);
+			}
+		}
+
+		fetchFeedbacks();
+	}, []);
+
+	useEffect(() => {
+		async function fetchFilteredFeedbacks() {
+			try {
+				const url = filterSource === "All" 
+					? "/api/feedback" 
+					: `/api/feedback?source=${encodeURIComponent(filterSource)}`;
+				const response = await fetch(url);
+				const data = (await response.json()) as { success: boolean; feedback: Feedback[] };
+				if (data.success) {
+					setFeedbacks(data.feedback);
+					if (data.feedback.length > 0) {
+						setSelectedId(data.feedback[0].id);
+					} else {
+						setSelectedId(null);
+					}
+				}
+			} catch (error) {
+				console.error("Error fetching filtered feedback:", error);
+			}
+		}
+
+		fetchFilteredFeedbacks();
+	}, [filterSource]);
+
+	// Get unique sources from all feedbacks (we'll fetch this separately)
+	const [allSources, setAllSources] = useState<string[]>(["All"]);
+
+	useEffect(() => {
+		async function fetchAllSources() {
+			try {
+				const response = await fetch("/api/feedback");
+				const data = (await response.json()) as { success: boolean; feedback: Feedback[] };
+				if (data.success) {
+					const uniqueSources = new Set<string>();
+					data.feedback.forEach((f: Feedback) => uniqueSources.add(f.source));
+					setAllSources(["All", ...Array.from(uniqueSources).sort()]);
+				}
+			} catch (error) {
+				console.error("Error fetching sources:", error);
+			}
+		}
+		fetchAllSources();
+	}, []);
+
+	const selectedFeedback = feedbacks.find((f) => f.id === selectedId);
+
+	if (loading) {
+		return (
+			<div className="flex items-center justify-center min-h-screen">
+				<div className="text-lg">Loading feedback...</div>
+			</div>
+		);
+	}
+
+	return (
+		<div className="flex h-screen bg-background text-foreground">
+			{/* Sidebar */}
+			<div className="w-80 bg-white dark:bg-[#0a0a0a] border-r border-black/[.08] dark:border-white/[.145] flex flex-col">
+				<div className="p-4 border-b border-black/[.08] dark:border-white/[.145]">
+					<label className="block text-sm font-medium mb-2 text-foreground">
+						Filter by Source
+					</label>
+					<select
+						className="w-full p-2 border border-black/[.08] dark:border-white/[.145] rounded bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-blue-500"
+						value={filterSource}
+						onChange={(e) => setFilterSource(e.target.value)}
 					>
-						Read our docs
-					</a>
+						{allSources.map((source) => (
+							<option key={source} value={source}>
+								{source}
+							</option>
+						))}
+					</select>
 				</div>
-			</main>
-			<footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-				<a
-					className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-					href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-					target="_blank"
-					rel="noopener noreferrer"
-				>
-					<Image aria-hidden src="/file.svg" alt="File icon" width={16} height={16} />
-					Learn
-				</a>
-				<a
-					className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-					href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-					target="_blank"
-					rel="noopener noreferrer"
-				>
-					<Image aria-hidden src="/globe.svg" alt="Globe icon" width={16} height={16} />
-					Go to nextjs.org →
-				</a>
-			</footer>
+				<div className="overflow-y-auto flex-1">
+					{feedbacks.length === 0 ? (
+						<div className="p-4 text-sm text-foreground/60">
+							No feedback found
+						</div>
+					) : (
+						feedbacks.map((feedback) => (
+							<button
+								key={feedback.id}
+								onClick={() => setSelectedId(feedback.id)}
+								className={`w-full text-left p-4 border-b border-black/[.08] dark:border-white/[.145] hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] transition-colors ${
+									selectedId === feedback.id
+										? "bg-blue-50 dark:bg-blue-950/20 border-r-4 border-r-blue-500"
+										: ""
+								}`}
+							>
+								<p className="font-medium text-sm mb-1 text-foreground line-clamp-2">
+									{feedback.text}
+								</p>
+								<p className="text-xs text-foreground/60 uppercase tracking-wider">
+									{feedback.source}
+								</p>
+							</button>
+						))
+					)}
+				</div>
+			</div>
+
+			{/* Main Panel */}
+			<div className="flex-1 p-8 overflow-y-auto">
+				{selectedFeedback ? (
+					<div className="max-w-3xl mx-auto">
+						<div className="bg-white dark:bg-[#0a0a0a] p-6 rounded-lg border border-black/[.08] dark:border-white/[.145] shadow-sm">
+							<div className="mb-6">
+								<span className="text-xs font-semibold uppercase tracking-wider text-foreground/40 mb-2 block">
+									Source
+								</span>
+								<p className="text-lg font-medium text-blue-600 dark:text-blue-400">
+									{selectedFeedback.source}
+								</p>
+							</div>
+							<div>
+								<span className="text-xs font-semibold uppercase tracking-wider text-foreground/40 mb-2 block">
+									Feedback
+								</span>
+								<p className="text-foreground whitespace-pre-wrap leading-relaxed">
+									{selectedFeedback.text}
+								</p>
+							</div>
+							{selectedFeedback.created_at && (
+								<div className="mt-6 pt-6 border-t border-black/[.08] dark:border-white/[.145]">
+									<span className="text-xs font-semibold uppercase tracking-wider text-foreground/40 mb-2 block">
+										Created At
+									</span>
+									<p className="text-sm text-foreground/60">
+										{new Date(selectedFeedback.created_at).toLocaleString()}
+									</p>
+								</div>
+							)}
+						</div>
+					</div>
+				) : (
+					<div className="max-w-3xl mx-auto">
+						<div className="bg-white dark:bg-[#0a0a0a] p-6 rounded-lg border border-black/[.08] dark:border-white/[.145]">
+							<p className="text-foreground/60">No feedback selected</p>
+						</div>
+					</div>
+				)}
+			</div>
 		</div>
 	);
 }
